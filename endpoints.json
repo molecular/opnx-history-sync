@@ -1,0 +1,54 @@
+{
+  "__disabled": {
+    "name": "__disabled",
+    "mint": {
+      "name": "mint",
+      "path": "/v2/{name}/{item}",
+      "method": "GET",
+      "time_field_name": "mintedAt",
+      "items": [
+        "flexUSD"
+      ],
+      "limit": 2,
+      "max_period": 604800000
+    },
+    "redeem": {
+      "name": "redeem",
+      "path": "/v2/{name}/{item}",
+      "method": "GET",
+      "time_field_name": "redeemedAt",
+      "items": [
+        "flexUSD"
+      ],
+      "limit": 2
+    }
+  },
+  "trades": {
+    "name": "trades",
+    "method": "GET",
+    "path": "/v2/{name}/{item}",
+    "time_field_name": "matchTimestamp",
+    "items": [
+      "BCH-USD"
+    ],
+    "limit": 10,
+    "max_period": 604799000
+  },
+  "deposits": {
+    "name": "deposits",
+    "method": "GET",
+    "path": "/v3/deposit",
+    "time_field_name": "creditedAt",
+    "limit": 200,
+    "max_period": 604799000
+  },
+  "withdrawals": {
+    "name": "withdrawals",
+    "method": "GET",
+    "path": "/v3/withdrawal",
+    "time_field_name": "completedAt",
+    "limit": 200,
+    "max_period": 604799000,
+    "rate_limit_sleep_s": 30
+  }
+}

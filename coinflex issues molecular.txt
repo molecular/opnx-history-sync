@@ -1,0 +1,47 @@
+version 1
+
+my use-case is to synchronize historical private data to a local copy (so access is purely read-only and only a subset of endpoints are used)
+
+
+* --- API ---
+
+	* A1: at least some error responses in v3 seem to be improperly encoded json. Example:
+		- requested /v3/withdrawal with {'limit': 200, 'startTime': 1612479595003, 'endTime': 1613084394003}...
+		- response.content b'{ code: "429", message: "Rate limit reached. Please try again later" }'
+		- json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
+
+	* A2: GET /v3/withdrawal
+		* There seems to be a rate limit in effect on this endpoint, even for GET (feels like 2/s). Not sure this is a mistake and it was meant for POST only. If it's indeed a mistake, I suspect same issue might exist for /v3/transfer, but didn't test for that.
+
+* --- API feature requests ---
+
+	* F1: /v2/trades/markets: a list of market the user has trades for (maybe even including min(timestamp) and max(timestamp) (from trades) for each market)
+
+	* F2: /v2/flexassets: a list of flexassets used by the user (maybe even including min(timestamp), max(timestamp) of mint/redeem/??? events)
+
+
+* --- API documentation ---
+	
+	* D1: GET /v2/accountinfo
+		* D1a: and accountCreated timestamp could be helpful as a starting point for api clients trying to pull "all data"
+	
+	* D2: GET /v3/withdrawal
+		* D2a: it is not clear wether startTime and endTime parameters filter "requestedAt" or "completedAt" fields.
+
+	* D3: GET /v2/redeem/{asset}
+		* D3a: it is not clear wether startTime and endTime parameters filter "requestedAt" or "redeemedAt" fieldd.
+
+	* D4: GET /v2/redeem/{asset}, /v2/mint/{asset}, maybe more
+		* D4a: documentation states startTime and endTime are "millisecond" timestamps (and I think that's, yet given example "1620977300" seems to be in seconds, not milliseconds.
+	
+	* D5: GET /v2/trades/{marketCode}
+		* D5a: it is not clear what the maximum time period that can be requested is (for contrast: in v2/orders it says 7 days, here it doesn't state)
+		* D5b: documentation states there is a "timestamp (INT)" response parameter, but there isn't. Instead there is a matchTimestamp, which is INNTEGER, not STRING as documentation states
+
+	* D6: general
+		* D6a: maybe introduce a section on error responses? for example: { "message": "method argument error", "code": "0010" } is mildly helpful, but could be better by publishing a list of codes
+		* D6b: it's explained v3 has rate limits. It's also explained there are further limits for certain endpoints (withdrawal, transfer), but I can't find the specific limits stated for these endpoints anywhere.
+
+* --- Web Frontend ---
+
+	* sheduled downtime is not nicely displayed (just a worrying error popup about network problem). Frontend could maybe explain there is scheduled maintenance in progress and maybe even some metadata about that like how long it's planned to last for.
