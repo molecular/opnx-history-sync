@@ -81,10 +81,9 @@ for name in config['endpoints_to_sync'].split(","):
 		while not finished:
 			try:
 				params = {
-					#'limit': limit,
-					'startTime': int(current_start_t) / 1000, 
-					#'endTime': 1620987300
-					#'endTime': int(current_start_t + current_period) 
+					'limit': limit,
+					'startTime': int(current_start_t), 
+					'endTime': int(current_start_t + current_period) 
 				}
 				# if params['endTime'] > t_now:
 				# 	params['endTime'] = t_now
@@ -115,7 +114,7 @@ for name in config['endpoints_to_sync'].split(","):
 								data[name]['data'] += received_data
 
 							# adjust time period parameters
-							if len(received_data) == limit: # limit was hit
+							if len(received_data) == limit: # limit was hit exactly
 								data[name]['latest_t'] = max(int(d[time_field_name]) for d in received_data) # this is problematic, there could be more non-delivered items with same timestamp
 							elif len(received_data) >= 0: # received data below limit, so endTime can be next startTime
 								data[name]['latest_t'] = params['endTime']
