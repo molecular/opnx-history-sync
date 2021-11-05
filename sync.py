@@ -1,5 +1,6 @@
 import requests
 import json
+import datetime
 import time
 import traceback
 
@@ -38,9 +39,8 @@ t_now = int(time.time() * 1000)
 
 #print(f"data loaded from {filename}: ", json.dumps(data, indent=2))
 
-for endpoint in endpoints.values():
-	name = endpoint['name']
-	if name[:2] == '__': continue
+for name in config['endpoints_to_sync'].split(","):
+	endpoint = endpoints[name]
 	print("endpoint: ", endpoint)
 	limit = endpoint['limit']
 	time_field_name = endpoint['time_field_name']
@@ -52,15 +52,16 @@ for endpoint in endpoints.values():
 			'latest_t': None,
 			'data': []
 		}
-	else: 
+	elif len(data[name]['data']) > 0:
 		print("have data...")
 		if data[name]['latest_t']:
 			print("have latest_t in data")
 			latest_t = data[name]['latest_t']
-		elif endpoint['time_field_name']:
-			print(f"using {endpoint['time_field_name']} for latest_t")
-			latest_t = max(d[endpoint['time_field_name']] for d in data[name]['data']) * 1000
+		elif time_field_name:
+			print(f"using {time_field_name} for latest_t")
+			latest_t = max(int(d[time_field_name]) for d in data[name]['data'])
 		print(f"latest_t now {latest_t}")
+
 	if latest_t > t_now:
 		latest_t = t_now
 
@@ -80,13 +81,13 @@ for endpoint in endpoints.values():
 		while not finished:
 			try:
 				params = {
-					'limit': limit,
-					'startTime': int(current_start_t),
+					#'limit': limit,
+					'startTime': int(current_start_t) / 1000, 
 					#'endTime': 1620987300
-					'endTime': int(current_start_t + current_period) 
+					#'endTime': int(current_start_t + current_period) 
 				}
-				if params['endTime'] > t_now:
-					params['endTime'] = t_now
+				# if params['endTime'] > t_now:
+				# 	params['endTime'] = t_now
 
 				# fire request
 				r = cf.request(path, params)

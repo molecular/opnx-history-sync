@@ -1,3 +1,4 @@
 coinflex_data.json
 config.py
 __pycache__
+*.csv*

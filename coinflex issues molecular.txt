@@ -1,7 +1,10 @@
 version 1
 
-my use-case is to synchronize historical private data to a local copy (so access is purely read-only and only a subset of endpoints are used)
+my use-case is to synchronize historical private data to a local copy (so access is purely read-only through the REST api and only a subset of endpoints are used)
 
+first of all: I _love_ this API, it's among the best exchange APIs out there (I've seen many!). It's simple and concise. It delivers unique IDs for all (I hope) objects, so duplicates can be removed easily and safely. Documentation is clear and up-to-date. Good job!!!
+
+However I *did* find some issues, some severe, some nice-to-haves. Here they are:
 
 * --- API ---
 
@@ -11,7 +14,24 @@ my use-case is to synchronize historical private data to a local copy (so access
 		- json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
 
 	* A2: GET /v3/withdrawal
-		* There seems to be a rate limit in effect on this endpoint, even for GET (feels like 2/s). Not sure this is a mistake and it was meant for POST only. If it's indeed a mistake, I suspect same issue might exist for /v3/transfer, but didn't test for that.
+
+		* A2a: There seems to be a rate limit in effect on this endpoint, even for GET (feels like 2/s). Not sure this is a mistake and it was meant for POST only. If it's indeed a mistake, I suspect same issue might exist for /v3/transfer, but didn't test for that. EDIT: I don't experience this any more today. Maybe it got fixed?
+
+		* A2b: some withdrawals don't have "completedAt" property althought the withdraw *did* happen on chain and status == 'COMPLETED'. Example:
+			{
+		    "asset": "flexUSD",
+		    "network": "SLP",
+		    "address": "<redacted>",
+		    "quantity": "100000",
+		    "fee": "0.000000000",
+		    "id": "693596153229836295",
+		    "status": "COMPLETED",
+		    "txId": "<redacted>",
+		    "requestedAt": "1631739147931"
+		  }
+
+	* A3: GET /v3/redeem/{asset} and GET /v3/mint/{asset}
+		can't use startTime and/or endTime. Tried seconds, milliseconds, all kind of things, but I keep getting "message": "Abnormal Parameters"
 
 * --- API feature requests ---
 

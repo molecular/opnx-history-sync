@@ -1,27 +1,25 @@
 {
-  "__disabled": {
-    "name": "__disabled",
-    "mint": {
-      "name": "mint",
-      "path": "/v2/{name}/{item}",
-      "method": "GET",
-      "time_field_name": "mintedAt",
-      "items": [
-        "flexUSD"
-      ],
-      "limit": 2,
-      "max_period": 604800000
-    },
-    "redeem": {
-      "name": "redeem",
-      "path": "/v2/{name}/{item}",
-      "method": "GET",
-      "time_field_name": "redeemedAt",
-      "items": [
-        "flexUSD"
-      ],
-      "limit": 2
-    }
+  "mint": {
+    "name": "mint",
+    "path": "/v2/{name}/{item}",
+    "method": "GET",
+    "time_field_name": "mintedAt",
+    "items": [
+      "flexUSD"
+    ],
+    "limit": 2,
+    "max_period": 604799000
+  },
+  "redeem": {
+    "name": "redeem",
+    "path": "/v2/{name}/{item}",
+    "method": "GET",
+    "time_field_name": "redeemedAt",
+    "items": [
+      "flexUSD"
+    ],
+    "limit": 2,
+    "max_period": 604799000
   },
   "trades": {
     "name": "trades",
