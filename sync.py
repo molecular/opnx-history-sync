@@ -6,76 +6,93 @@ import traceback
 
 from config import config
 from coinflex import CoinFlex
-  
-cf = CoinFlex(config['rest_url'], config['rest_path'], config['api_key'], config['api_secret'])
 
-# REST API method
-filename = 'coinflex_data.json'
+class History:
+	def __init__(self):
+		self.cf = CoinFlex(config['rest_url'], config['rest_path'], config['api_key'], config['api_secret'])
+		self.data = {}
+		
+		# load endpoints.json
+		with open('endpoints.json', 'r') as file:
+			self.endpoints = json.load(file)
 
-markets = ['BCH-USD']
-flex_assets = ['flexUSD']
+	def loadFromFile(self, filename):
+		try:
+			with open(filename, 'r') as file:
+			  self.data = json.load(file)
+				#print(f"data loaded from {filename}: ", json.dumps(self.data, indent=2))
+		except (FileNotFoundError, json.decoder.JSONDecodeError):
+			print(f"data file '{filename}' not found or not valid JSON data, starting from empty data")
 
-# load endpoints.json
-with open('endpoints.json', 'r') as file:
-  endpoints = json.load(file)
+	def dumpToFile(self, filename):	
+		with open(filename, "w") as outfile:
+			outfile.write(json.dumps(self.data, indent=1))
 
-# load data
-try:
-	with open(filename, 'r') as file:
-	  data = json.load(file)
-except (FileNotFoundError, json.decoder.JSONDecodeError):
-	data = {}
+	# sync "accountinfo" endpoint to self.data['accountinfo']
 
-# request accountinfo and add to data
-print("requesting /v2/accountinfo...")
-r = cf.request('/v2/accountinfo', {})
-# print("accountinfo response", r)
-# print("accountinfo response.content", r.content)
-# print("accountinfo response.json", json.dumps(r.json(), indent=4))
-data['accountinfo'] = r.json()
+	def sync_accountinfo(self):
+		# request accountinfo and add to data
+		print("requesting /v2/accountinfo...")
+		r = self.cf.request('/v2/accountinfo', {})
+		# print("accountinfo response", r)
+		# print("accountinfo response.content", r.content)
+		# print("accountinfo response.json", json.dumps(r.json(), indent=4))
+		self.data['accountinfo'] = r.json()
 
+	# sync data from enpoints given by enpoint_names to self.data 
 
-t_now = int(time.time() * 1000)
+	def sync_endpoints(self, endpoint_names):
+		t_now = int(time.time() * 1000)
 
-#print(f"data loaded from {filename}: ", json.dumps(data, indent=2))
+		for name in endpoint_names:
+			endpoint = self.endpoints[name]
 
-for name in config['endpoints_to_sync'].split(","):
-	endpoint = endpoints[name]
-	print("endpoint: ", endpoint)
-	limit = endpoint['limit']
-	time_field_name = endpoint['time_field_name']
+			self.sync_endpoint(endpoint, t_now)
 
-	# determine latest_t
-	latest_t = config['t_account_start']
-	if name not in data:
-		data[name] = {
-			'latest_t': None,
-			'data': []
-		}
-	elif len(data[name]['data']) > 0:
-		print("have data...")
-		if data[name]['latest_t']:
-			print("have latest_t in data")
-			latest_t = data[name]['latest_t']
-		elif time_field_name:
-			print(f"using {time_field_name} for latest_t")
-			latest_t = max(int(d[time_field_name]) for d in data[name]['data'])
-		print(f"latest_t now {latest_t}")
+	# sync data from given enpoints self.data 
 
-	if latest_t > t_now:
-		latest_t = t_now
+	def sync_endpoint(self, endpoint, t_now):
 
-	print(f"endpoint {name}: latest_t={latest_t}")
+		print("--- syncing endpoint: ", endpoint)
+		name = endpoint['name']
+		time_field_name = endpoint['time_field_name']
 
-	if 'items' not in endpoint:
-		items = ['<all>']
-	else:
-		items = endpoint['items']
-	for item in items:
+		# determine latest_t
+		latest_t = config['t_account_start']
+		if name not in self.data:
+			self.data[name] = {
+				'latest_t': None,
+				'data': []
+			}
+		elif len(self.data[name]['data']) > 0:
+			if self.data[name]['latest_t']:
+				latest_t = self.data[name]['latest_t']
+				print(f"{name}: using latest_t {latest_t} from data")
+			elif time_field_name:
+				print(f"{name}: using {time_field_name} for latest_t")
+				latest_t = max(int(d[time_field_name]) for d in self.data[name]['data'])
+
+		if latest_t > t_now:
+			latest_t = t_now
+
+		if 'items' not in endpoint:
+			items = ['<all>']
+		else:
+			items = endpoint['items']
+		for item in items:
+
+			self.sync_endpoint_item(endpoint, item, t_now, latest_t)
+
+	# sync data specified by 'item' from given endpoint to self.data
+
+	def sync_endpoint_item(self, endpoint, item, t_now, latest_t):
+		name = endpoint['name']
+		limit = endpoint['limit']
 		path = endpoint['path'].format(name=name, item=item)
 		current_start_t = latest_t
 		current_period = endpoint['max_period']
-		print(f"working on endpoint {name}, requesting {path}")
+		print(f"\n--- syncing {name}, item {item}: latest_t = {latest_t} = {datetime.datetime.fromtimestamp(latest_t/1000)}")
+
 		received_data = None
 		finished = False
 		while not finished:
@@ -85,16 +102,17 @@ for name in config['endpoints_to_sync'].split(","):
 					'startTime': int(current_start_t), 
 					'endTime': int(current_start_t + current_period) 
 				}
-				# if params['endTime'] > t_now:
-				# 	params['endTime'] = t_now
+				if params['endTime'] > t_now:
+				 	params['endTime'] = t_now
 
 				# fire request
-				r = cf.request(path, params)
+				r = self.cf.request(path, params)
 
 				#print("response", r)
 				if r.status_code != 200:
 					print(f"status_code {r.status_code}, content: {r.content}")
 					if r.status_code == 429: # rate limit hit
+						print(f"   rate limit encountered, sleeping {endpoint['rate_limit_sleep_s']} seconds...")
 						time.sleep(endpoint['rate_limit_sleep_s'])
 				else:
 					received_json = r.json()
@@ -103,7 +121,7 @@ for name in config['endpoints_to_sync'].split(","):
 						print(json.dumps(received_json, indent=2))
 					else:
 						received_data = received_json["data"]
-						print(f"{name}: requested {path} with {params}...")
+						print(f"   requested {path} with {params}...")
 						#print("type(received_data): ", type(received_data))
 
 						if received_data != None:
@@ -111,14 +129,14 @@ for name in config['endpoints_to_sync'].split(","):
 
 							# append data to storage
 							if len(received_data) > 0:
-								data[name]['data'] += received_data
+								self.data[name]['data'] += received_data
 
 							# adjust time period parameters
 							if len(received_data) == limit: # limit was hit exactly
-								data[name]['latest_t'] = max(int(d[time_field_name]) for d in received_data) # this is problematic, there could be more non-delivered items with same timestamp
+								self.data[name]['latest_t'] = max(int(d[time_field_name]) for d in received_data) # this is problematic, there could be more non-delivered items with same timestamp
 							elif len(received_data) >= 0: # received data below limit, so endTime can be next startTime
-								data[name]['latest_t'] = params['endTime']
-							current_start_t = data[name]['latest_t'] + 1
+								self.data[name]['latest_t'] = params['endTime']
+							current_start_t = self.data[name]['latest_t'] + 1
 							print("   new current_start_t: ", datetime.datetime.fromtimestamp(current_start_t/1000))
 
 							if current_start_t >= t_now:
@@ -132,6 +150,23 @@ for name in config['endpoints_to_sync'].split(","):
 				print("ABORT due to", ex)
 				traceback.print_exc()
 				finished = True
+
+
+# instantiate history, load data from file, sync and dump back to same file
+
+history = History()
+history.loadFromFile(config['coinflex_data_filename'])
+history.sync_accountinfo()
+history.sync_endpoints(config['endpoints_to_sync'].split(","))
+history.dumpToFile(config['coinflex_data_filename'])
+
+
+markets = ['BCH-USD']
+flex_assets = ['flexUSD']
+
+
+
+
 
 #print(json.dumps(data, indent=1))
 
@@ -152,6 +187,4 @@ for name in config['endpoints_to_sync'].split(","):
 # print (resp)
 # print(resp.content.decode())
 
-with open("coinflex_data.json", "w") as outfile:
-	outfile.write(json.dumps(data, indent=1))
 

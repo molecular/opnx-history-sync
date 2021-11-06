@@ -1,4 +1,4 @@
-version 1
+version 2
 
 my use-case is to synchronize historical private data to a local copy (so access is purely read-only through the REST api and only a subset of endpoints are used)
 
@@ -12,6 +12,8 @@ However I *did* find some issues, some severe, some nice-to-haves. Here they are
 		- requested /v3/withdrawal with {'limit': 200, 'startTime': 1612479595003, 'endTime': 1613084394003}...
 		- response.content b'{ code: "429", message: "Rate limit reached. Please try again later" }'
 		- json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
+
+		=> Phil: we'll investigate
 
 	* A2: GET /v3/withdrawal
 
@@ -30,38 +32,43 @@ However I *did* find some issues, some severe, some nice-to-haves. Here they are
 		    "requestedAt": "1631739147931"
 		  }
 
-	* A3: GET /v3/redeem/{asset} and GET /v3/mint/{asset}
+		=> Phil: we'll investigate
+
+	* A3: GET /v2/redeem/{asset} and GET /v2/mint/{asset}
 		can't use startTime and/or endTime. Tried seconds, milliseconds, all kind of things, but I keep getting "message": "Abnormal Parameters"
 
 * --- API feature requests ---
 
-	* F1: /v2/trades/markets: a list of market the user has trades for (maybe even including min(timestamp) and max(timestamp) (from trades) for each market)
+	X F1: /v2/trades/markets: a list of market the user has trades for (maybe even including min(timestamp) and max(timestamp) (from trades) for each market)
+	=> Phil: noted I agree that would be useful. 
 
-	* F2: /v2/flexassets: a list of flexassets used by the user (maybe even including min(timestamp), max(timestamp) of mint/redeem/??? events)
+	X F2: /v2/flexassets: a list of flexassets used by the user (maybe even including min(timestamp), max(timestamp) of mint/redeem/??? events)
+	=> Phil: noted I agree that would be useful. 
 
 
 * --- API documentation ---
 	
-	* D1: GET /v2/accountinfo
+	x D1: GET /v2/accountinfo
 		* D1a: and accountCreated timestamp could be helpful as a starting point for api clients trying to pull "all data"
+		=> Phil: D1 is coming soon in a new endpoint v3/account
 	
-	* D2: GET /v3/withdrawal
+	x D2: GET /v3/withdrawal
 		* D2a: it is not clear wether startTime and endTime parameters filter "requestedAt" or "completedAt" fields.
+		=> Phil: the time filters are applied to requestedAt
 
-	* D3: GET /v2/redeem/{asset}
+	x D3: GET /v2/redeem/{asset}
 		* D3a: it is not clear wether startTime and endTime parameters filter "requestedAt" or "redeemedAt" fieldd.
+		=> Phil: the filters apply to requestedAt and are millisecond timestamps
 
-	* D4: GET /v2/redeem/{asset}, /v2/mint/{asset}, maybe more
+	X D4: GET /v2/redeem/{asset}, /v2/mint/{asset}, maybe more
 		* D4a: documentation states startTime and endTime are "millisecond" timestamps (and I think that's, yet given example "1620977300" seems to be in seconds, not milliseconds.
+		=> Phil: the filters apply to requestedAt and are millisecond timestamps - it's well documented this time around
 	
-	* D5: GET /v2/trades/{marketCode}
+	X D5: GET /v2/trades/{marketCode}
 		* D5a: it is not clear what the maximum time period that can be requested is (for contrast: in v2/orders it says 7 days, here it doesn't state)
+		=> best to keep all time filters within 7 days or else you risk timing out
 		* D5b: documentation states there is a "timestamp (INT)" response parameter, but there isn't. Instead there is a matchTimestamp, which is INNTEGER, not STRING as documentation states
 
 	* D6: general
 		* D6a: maybe introduce a section on error responses? for example: { "message": "method argument error", "code": "0010" } is mildly helpful, but could be better by publishing a list of codes
 		* D6b: it's explained v3 has rate limits. It's also explained there are further limits for certain endpoints (withdrawal, transfer), but I can't find the specific limits stated for these endpoints anywhere.
-
-* --- Web Frontend ---
-
-	* sheduled downtime is not nicely displayed (just a worrying error popup about network problem). Frontend could maybe explain there is scheduled maintenance in progress and maybe even some metadata about that like how long it's planned to last for.
