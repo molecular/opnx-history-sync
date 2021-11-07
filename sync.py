@@ -53,24 +53,24 @@ class History:
 
 	def sync_endpoint(self, endpoint, t_now):
 
-		print("--- syncing endpoint: ", endpoint)
+		print(f"\n*** syncing endpoint {endpoint} ***\n")
 		name = endpoint['name']
 		time_field_name = endpoint['time_field_name']
 
 		# determine latest_t
-		latest_t = config['t_account_start']
 		if name not in self.data:
 			self.data[name] = {
 				'latest_t': None,
 				'data': []
 			}
-		elif len(self.data[name]['data']) > 0:
-			if self.data[name]['latest_t']:
-				latest_t = self.data[name]['latest_t']
-				print(f"{name}: using latest_t {latest_t} from data")
-			elif time_field_name:
-				print(f"{name}: using {time_field_name} for latest_t")
-				latest_t = max(int(d[time_field_name]) for d in self.data[name]['data'])
+		if 'latest_t' in self.data[name] and self.data[name]['latest_t']:
+			latest_t = self.data[name]['latest_t']
+			print(f"{name}: using latest_t {latest_t} from data")
+		elif len(self.data[name]['data']) > 0 and time_field_name:
+			print(f"{name}: using {time_field_name} for latest_t")
+			latest_t = max(int(d[time_field_name]) for d in self.data[name]['data'])
+		else:
+			latest_t = config['t_account_start']
 
 		if latest_t > t_now:
 			latest_t = t_now
@@ -89,9 +89,11 @@ class History:
 		name = endpoint['name']
 		limit = endpoint['limit']
 		path = endpoint['path'].format(name=name, item=item)
+		time_field_name = endpoint['time_field_name']
+
 		current_start_t = latest_t
 		current_period = endpoint['max_period']
-		print(f"\n--- syncing {name}, item {item}: latest_t = {latest_t} = {datetime.datetime.fromtimestamp(latest_t/1000)}")
+		print(f"\n--- syncing {name}, item {item}: latest_t = {latest_t} = {datetime.datetime.fromtimestamp(latest_t/1000)} ---\n")
 
 		received_data = None
 		finished = False
@@ -106,6 +108,7 @@ class History:
 				 	params['endTime'] = t_now
 
 				# fire request
+				print(f"requesting path {path} with params {params}")
 				r = self.cf.request(path, params)
 
 				#print("response", r)
@@ -114,6 +117,8 @@ class History:
 					if r.status_code == 429: # rate limit hit
 						print(f"   rate limit encountered, sleeping {endpoint['rate_limit_sleep_s']} seconds...")
 						time.sleep(endpoint['rate_limit_sleep_s'])
+					else:
+						raise Exception(f"HTTP Status Code {r.status_code}, aborting (will store data)")
 				else:
 					received_json = r.json()
 					if "data" not in received_json:
@@ -127,16 +132,38 @@ class History:
 						if received_data != None:
 							print(f"   received {len(received_data)}/{limit} items")
 
-							# append data to storage
-							if len(received_data) > 0:
+							# adjust time interval parameters
+
+							if len(received_data) == limit: # limit was hit exactly
+
+								# latest_t is taken from received_data
+								self.data[name]['latest_t'] = max(int(d[time_field_name]) for d in received_data) 
+								print(f"self.data[name]['latest_t'] = {self.data[name]['latest_t']}")
+
+								# store all items except the ones with latest timestamp
+								# there could be more non-delivered items with that timestamp,... 
+								for d in received_data:
+									if True or int(d[time_field_name]) != self.data[name]['latest_t']:
+										print(f"storing {d}")
+										self.data[name]['data'].append(d) 
+									else:
+										print(f"skipping storage of {d}")
+
+								# so we need to include that timestamp as startTime in next request
+								current_start_t = self.data[name]['latest_t']
+
+							elif len(received_data) >= 0: 
+
+								# latest_t is set to endTime of request
+								# this is problematic due to possible clock difference local vs. server (TODO)
+								self.data[name]['latest_t'] = params['endTime']
+
+								# append data to storage
 								self.data[name]['data'] += received_data
 
-							# adjust time period parameters
-							if len(received_data) == limit: # limit was hit exactly
-								self.data[name]['latest_t'] = max(int(d[time_field_name]) for d in received_data) # this is problematic, there could be more non-delivered items with same timestamp
-							elif len(received_data) >= 0: # received data below limit, so endTime can be next startTime
-								self.data[name]['latest_t'] = params['endTime']
-							current_start_t = self.data[name]['latest_t'] + 1
+								# next request can used endTime + 1 as startTime
+								current_start_t = self.data[name]['latest_t'] + 1
+
 							print("   new current_start_t: ", datetime.datetime.fromtimestamp(current_start_t/1000))
 
 							if current_start_t >= t_now:
@@ -156,7 +183,7 @@ class History:
 
 history = History()
 history.loadFromFile(config['coinflex_data_filename'])
-history.sync_accountinfo()
+#history.sync_accountinfo()
 history.sync_endpoints(config['endpoints_to_sync'].split(","))
 history.dumpToFile(config['coinflex_data_filename'])
 

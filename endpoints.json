@@ -21,6 +21,16 @@
     "limit": 2,
     "max_period": 604799000
   },
+  "funding-payments": {
+    "name": "funding-payments",
+    "path": "/v2/{name}/{item}",
+    "method": "GET",
+    "time_field_name": "timestamp",
+    "items": [
+    ],
+    "limit": 2,
+    "max_period": 604799000
+  },
   "trades": {
     "name": "trades",
     "method": "GET",
@@ -29,7 +39,7 @@
     "items": [
       "BCH-USD"
     ],
-    "limit": 10,
+    "limit": 1000,
     "max_period": 604799000
   },
   "deposits": {

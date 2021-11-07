@@ -1,0 +1,62 @@
+version 2
+
+* --- API ---
+
+	* A4: GET /v2/trades (and likely other endpoints): item order is not fully dependable. Items ordered by timestamp, but when multiple items with same timestamp are received, I have observed the ordering within the same timestamp to change accross identiacal requests. Maybe use "id" as second sorting criteria? 
+
+	* A5: GET /v2/trades: limit isn't working correclty (looks like <limit> items are selected, but not the first <limit> items by matchtimestamp)
+
+		note: this may be related to D5b (timestamp confusion)
+
+		description:
+
+		- I first requested a time interval with limit 600 to get some "real data" most likely reflecting what's in your db.
+		- requesting path /v2/trades/BCH-USD with params {'limit': 600, 'startTime': 1634680793007, 'endTime': 1635285592007}
+		- received: 77 items with following matchtimestamp breakdown:
+
+			  matchtimestamp | count
+			----------------+-------
+			  1635062931531 |    12
+			  1635063009404 |     1
+			  1635063016249 |     1
+			  1635063245513 |    15
+			  1635063265630 |    20
+			  1635063265631 |    26
+			  1635063265632 |     2	
+
+		- So when doing the same request, but with limit 60 instead of 600, I would EXPECT to receive the 60 oldest items from above set yielding the following matchtimestamp breakdown:
+
+			  matchtimestamp | count
+			----------------+-------
+			  1635062931531 |    12
+			  1635063009404 |     1
+			  1635063016249 |     1
+			  1635063245513 |    15
+			  1635063265630 |    20
+			  1635063265631 |    11
+
+		- that's not what happens, INSTEAD this happens:
+
+		- requesting path /v2/trades/BCH-USD with params {'limit': 60, 'startTime': 1634680793007, 'endTime': 1635285592007}
+
+			 matchtimestamp | count
+			----------------+-------
+			  1635063245513 |    12
+			  1635063265630 |    20
+			  1635063265631 |    26
+			  1635063265632 |     2		
+
+		- ANALYSIS: it's pretty obvious what's going on: The endpoint returns the 60 MOST RECENT items matching the time interval instead of the 60 OLDEST ones (which I was expecting). Given that the ordering of the response is by matchtimestamp ASCending my expectation seems reasonable?
+
+		suggestion: use matchtimestamp ASCending ordering when chopping the result to <limit> items. Or don't (since this might conflict with assumption made by web frontend). Maybe parameterize? In any case: make clear in documentation under what ordering the limit is applied and maybe also what ordering is used to supply the data.
+
+* --- API feature requests ---
+
+	* F3: response metadata: along with the (limited) data, some metadata about the request/response would be helpful: 
+			* actual startTime, endTime used (especially useful if those are not supplied with the request or adjusted from what was in request params)
+			* count of matching items (before applying limit)
+			* ?
+
+	* F4: If I'm not wrong, interest payment history is still not available in api (something like /v2/lending/protected/flex/asset/history)?)
+
+	* F5: If I'm not wrong, borrow/repay history is still not available in api (something like /v2/lending/protected/flex/asset/borrow/history)?)	
