@@ -34,8 +34,10 @@ However I *did* find some issues, some severe, some nice-to-haves. Here they are
 
 		=> Phil: we'll investigate
 
-	* A3: GET /v2/redeem/{asset} and GET /v2/mint/{asset}
+	X A3: GET /v2/redeem/{asset} and GET /v2/mint/{asset}
 		can't use startTime and/or endTime. Tried seconds, milliseconds, all kind of things, but I keep getting "message": "Abnormal Parameters"
+
+		=> replaced by v3
 
 * --- API feature requests ---
 

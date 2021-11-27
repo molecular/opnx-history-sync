@@ -1,10 +1,17 @@
-version 2
+part 3
+
+issues still assumed open:
+
+A2b
+A4
+A5
+F4
 
 * --- API ---
 
-	* A6:
+	* A6: GET v3/redeem: this endpoint delivers redeem operations that are still in progress. redeemedAt is set to requestedAt. Those items should only be delivered once the redeem operation has actually finished and redeemedAt can be assumed to not change in the future.
 
 * --- API feature requests ---
 
-	* F6:
+	* F6: GET v3/mint, GET v3/redeem: missing id field (good for checking for duplicates). Notice "redeemedAt" cannot be used as part of a synthetic uniquie key on client side because of A6
 	

@@ -1,34 +1,26 @@
 {
   "mint": {
     "name": "mint",
-    "path": "/v2/{name}/{item}",
+    "path": "/v3/flexasset/mint",
+    "params": {"asset": "{item}"},
     "method": "GET",
     "time_field_name": "mintedAt",
     "items": [
       "flexUSD"
     ],
-    "limit": 2,
+    "limit": 200,
     "max_period": 604799000
   },
   "redeem": {
     "name": "redeem",
-    "path": "/v2/{name}/{item}",
+    "path": "/v3/flexasset/redeem",
+    "params": {"asset": "{item}"},
     "method": "GET",
     "time_field_name": "redeemedAt",
     "items": [
       "flexUSD"
     ],
-    "limit": 2,
-    "max_period": 604799000
-  },
-  "funding-payments": {
-    "name": "funding-payments",
-    "path": "/v2/{name}/{item}",
-    "method": "GET",
-    "time_field_name": "timestamp",
-    "items": [
-    ],
-    "limit": 2,
+    "limit": 200,
     "max_period": 604799000
   },
   "trades": {
@@ -37,7 +29,8 @@
     "path": "/v2/{name}/{item}",
     "time_field_name": "matchTimestamp",
     "items": [
-      "BCH-USD"
+      "BCH-USD",
+      "DOGE-USD"
     ],
     "limit": 1000,
     "max_period": 604799000

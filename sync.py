@@ -104,6 +104,10 @@ class History:
 					'startTime': int(current_start_t), 
 					'endTime': int(current_start_t + current_period) 
 				}
+				if "params" in endpoint:
+					params_to_add = endpoint['params']
+					for key in params_to_add.keys():
+						params[key] = params_to_add[key].format(name=name, item=item)
 				if params['endTime'] > t_now:
 				 	params['endTime'] = t_now
 
@@ -129,13 +133,17 @@ class History:
 						print(f"   requested {path} with {params}...")
 						#print("type(received_data): ", type(received_data))
 
-						if received_data != None:
+						if received_data == None:
+							print("no data received (not even empty), probably error")
+							print("response.json", json.dumps(r.json(), indent=4))
+						else:
 							print(f"   received {len(received_data)}/{limit} items")
 
 							# adjust time interval parameters
 
 							if len(received_data) == limit: # limit was hit exactly
-
+								raise Exception("limit hit, due to issue A5 we have to abort")
+								'''
 								# latest_t is taken from received_data
 								self.data[name]['latest_t'] = max(int(d[time_field_name]) for d in received_data) 
 								print(f"self.data[name]['latest_t'] = {self.data[name]['latest_t']}")
@@ -151,7 +159,7 @@ class History:
 
 								# so we need to include that timestamp as startTime in next request
 								current_start_t = self.data[name]['latest_t']
-
+								'''
 							elif len(received_data) >= 0: 
 
 								# latest_t is set to endTime of request
@@ -169,9 +177,6 @@ class History:
 							if current_start_t >= t_now:
 								finished = True
 
-						else:
-							print("no data received (not even empty), probably error")
-							print("response.json", json.dumps(r.json(), indent=4))
 
 			except (KeyboardInterrupt, Exception) as ex:
 				print("ABORT due to", ex)
@@ -188,8 +193,6 @@ history.sync_endpoints(config['endpoints_to_sync'].split(","))
 history.dumpToFile(config['coinflex_data_filename'])
 
 
-markets = ['BCH-USD']
-flex_assets = ['flexUSD']
 
 
 
