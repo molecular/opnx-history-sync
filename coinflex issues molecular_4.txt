@@ -1,0 +1,23 @@
+part 4
+
+issues still assumed open:
+
+A4
+A5
+A6
+F4
+F6
+
+* --- API ---
+
+	A7: GET v3/redeem: I'm confused about redeemedAt field: I have an example where
+		* requestedAt: 2021-11-19 08:09:32+00 
+		* redeemedAt: 2021-11-19 23:30:23+00
+		So far so good (although the difference of 14 hours seems too long). The weird thing is that v2/trades tells me I have been seeling the resulting USDC at
+		* 2021-11-19 14:21:02 and 2021-11-19 14:22:05+00
+		("clientOrderId": "1637331725337", "clientOrderId": "1637331662534")
+		which shouldn't be possible because they weren't redeemed yet at that point.
+		also note the web frontend does not show redeemedAt, only requestedAt in "Mint & Redeem History". Maybe adding a column for redeemedAt would be adequate?
+
+
+* --- API feature requests ---
