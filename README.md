@@ -10,7 +10,7 @@ Not in good shape yet.
 
 This is currently a work-in-progress hackjob that just about "works for me". In case of demand I will improve.
 
-Several issues are currently worked-around (partially by aborting and informing user), mainly A5, A5 (see the coinflex_issues_*.txt files)
+Several API issues are currently worked-around (partially by aborting and informing user), mainly A5, A6 (see the coinflex_issues_*.txt files)
 
 ### Usage
 
