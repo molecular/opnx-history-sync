@@ -5,9 +5,7 @@
     "params": {"asset": "{item}"},
     "method": "GET",
     "time_field_name": "mintedAt",
-    "items": [
-      "flexUSD"
-    ],
+    "items_config_var": "assets",
     "limit": 200,
     "max_period": 604799000
   },
@@ -17,9 +15,7 @@
     "params": {"asset": "{item}"},
     "method": "GET",
     "time_field_name": "redeemedAt",
-    "items": [
-      "flexUSD"
-    ],
+    "items_config_var": "assets",
     "limit": 200,
     "max_period": 604799000
   },
@@ -29,9 +25,7 @@
     "params": {"asset": "{item}"},
     "method": "GET",
     "time_field_name": "paidAt",
-    "items": [
-      "flexUSD"
-    ],
+    "items_config_var": "assets",
     "limit": 200,
     "max_period": 604799000
   },
@@ -40,10 +34,7 @@
     "method": "GET",
     "path": "/v2/{name}/{item}",
     "time_field_name": "matchTimestamp",
-    "items": [
-      "BCH-USD",
-      "DOGE-USD"
-    ],
+    "items_config_var": "markets",
     "limit": 1000,
     "max_period": 604799000
   },

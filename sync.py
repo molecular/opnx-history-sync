@@ -75,12 +75,12 @@ class History:
 		if latest_t > t_now:
 			latest_t = t_now
 
-		if 'items' not in endpoint:
+		if 'items_config_var' not in endpoint:
 			items = ['<all>']
 		else:
-			items = endpoint['items']
+			items = config[endpoint['items_config_var']]
+		print(f"--- endpoint '{name}': syncing items {items} ---")
 		for item in items:
-
 			self.sync_endpoint_item(endpoint, item, t_now, latest_t)
 
 	# sync data specified by 'item' from given endpoint to self.data

@@ -10,6 +10,15 @@ config = {
 	'api_key': "<your api key>",
 	'api_secret': "<your api secret>",
 
+	# list the assets and market pairs you used
+	'assets': [
+		"flexUSD"
+	],
+	'markets': [
+		"BCH-USD",
+		"DOGE-USD"
+	],
+
 	# data will be pulled starting from this timestamp
 	't_account_start': int(1609455600 * 1000), # 2021/01/01 Europe/Berlin (output of "date -d 2021-01-01 +%s")
 
