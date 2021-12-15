@@ -23,6 +23,18 @@
     "limit": 200,
     "max_period": 604799000
   },
+  "earned": {
+    "name": "earned",
+    "path": "/v3/flexasset/earned",
+    "params": {"asset": "{item}"},
+    "method": "GET",
+    "time_field_name": "paidAt",
+    "items": [
+      "flexUSD"
+    ],
+    "limit": 200,
+    "max_period": 604799000
+  },
   "trades": {
     "name": "trades",
     "method": "GET",

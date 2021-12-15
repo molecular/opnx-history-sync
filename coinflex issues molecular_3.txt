@@ -13,5 +13,5 @@ F4
 
 * --- API feature requests ---
 
-	* F6: GET v3/mint, GET v3/redeem: missing id field (good for checking for duplicates). Notice "redeemedAt" cannot be used as part of a synthetic uniquie key on client side because of A6
+	* F6: GET v3/flexasset/mint, GET v3/flexasset/redeem, GET v3/flexasset/earned: missing id field (good for checking for duplicates). Notice "redeemedAt" cannot be used as part of a synthetic uniquie key on client side because of A6
 	

@@ -5,7 +5,6 @@ issues still assumed open:
 A4
 A5
 A6
-F4
 F6
 
 * --- API ---

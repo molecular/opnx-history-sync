@@ -14,6 +14,6 @@ config = {
 	't_account_start': int(1609455600 * 1000), # 2021/01/01 Europe/Berlin (output of "date -d 2021-01-01 +%s")
 
 	# list of endpoints to sync (look at endpoints.json for which ones are available)
-	'endpoints_to_sync': 'mint,redeem,trades,withdrawals,deposits'
+	'endpoints_to_sync': 'mint,redeem,earned,trades,withdrawals,deposits'
 }
 

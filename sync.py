@@ -133,6 +133,12 @@ class History:
 						print(f"   requested {path} with {params}...")
 						#print("type(received_data): ", type(received_data))
 
+						# work around issue A6 removing redeem operations still in progess. This can be removed when A6 is fixed by coinflex
+						# NOTE: this introduces danger of missing a redeem that is still in progress in case startTime/endTime filter is on requestedAt. 
+						#       In case filter is on redeemetAt it should be fine
+						if name == 'redeem':
+							received_data = [d for d in received_data if d["redeemedAt"] != d["requestedAt"]]
+
 						if received_data == None:
 							print("no data received (not even empty), probably error")
 							print("response.json", json.dumps(r.json(), indent=4))
@@ -142,7 +148,7 @@ class History:
 							# adjust time interval parameters
 
 							if len(received_data) == limit: # limit was hit exactly
-								raise Exception("limit hit, due to issue A5 we have to abort")
+								raise Exception(f"limit hit, due to issue A5 we have to abort, consider reducing max_period in endpoints.json for endpoint named '{name}'")
 								'''
 								# latest_t is taken from received_data
 								self.data[name]['latest_t'] = max(int(d[time_field_name]) for d in received_data) 
@@ -163,7 +169,7 @@ class History:
 							elif len(received_data) >= 0: 
 
 								# latest_t is set to endTime of request
-								# this is problematic due to possible clock difference local vs. server (TODO)
+								# is this problematic due to possible clock difference local vs. server (TODO)?
 								self.data[name]['latest_t'] = params['endTime']
 
 								# append data to storage
@@ -172,7 +178,7 @@ class History:
 								# next request can used endTime + 1 as startTime
 								current_start_t = self.data[name]['latest_t'] + 1
 
-							print("   new current_start_t: ", datetime.datetime.fromtimestamp(current_start_t/1000))
+							#print("   new current_start_t: ", datetime.datetime.fromtimestamp(current_start_t/1000))
 
 							if current_start_t >= t_now:
 								finished = True
@@ -191,30 +197,3 @@ history.loadFromFile(config['coinflex_data_filename'])
 #history.sync_accountinfo()
 history.sync_endpoints(config['endpoints_to_sync'].split(","))
 history.dumpToFile(config['coinflex_data_filename'])
-
-
-
-
-
-
-
-#print(json.dumps(data, indent=1))
-
-# trades = []
-# for market in markets:
-# 	r = cf.request(f'/v2/trades/{market}').json()
-# 	trades += r["data"]
-# print(json.dumps(trades))
-
-#{"pageNum":1,"pageSize":10,"searchParams":{"instruments":[],"statuses":[],"startDate":"2021-07-19 22:00:00","endDate":"2021-10-19 22:00:00"}}
-
-# method = '/v2/account/withdraw/histories'
-# params = {
-# 	'startDate': "2021-07-19 22:00:00",
-# 	"endDate":"2021-10-19 22:00:00"
-# }
-# resp = cf.request(method, params)
-# print (resp)
-# print(resp.content.decode())
-
-
