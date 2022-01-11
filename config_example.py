@@ -16,7 +16,8 @@ config = {
 	],
 	'markets': [
 		"BCH-USD",
-		"DOGE-USD"
+		"DOGE-USD",
+		"BTC-USD"
 	],
 
 	# data will be pulled starting from this timestamp
