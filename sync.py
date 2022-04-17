@@ -125,6 +125,13 @@ class History:
 						raise Exception(f"HTTP Status Code {r.status_code}, aborting (will store data)")
 				else:
 					received_json = r.json()
+					# temporary hack to get around behaviour introduced 4/15 2022 that api throws error 20001 when there is no data
+					if "success" in received_json and "code" in received_json and "message" in received_json:
+						print('looks like error response')
+						if received_json["success"] == False and received_json["code"] == "20001" and received_json["message"] == "result not found, please check your parameters":
+							print('special hack to ignore error code 20001')
+							received_json["data"] = []
+
 					if "data" not in received_json:
 						print("ERROR from api, response:")
 						print(json.dumps(received_json, indent=2))

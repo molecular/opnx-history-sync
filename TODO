@@ -3,4 +3,4 @@ TODO
  * exit with correct exit code (success or error)
  * items lists are defined in endpoints, but should be taken from API (coinflex promised an endpoint to query used markets/assets) or at least be in config instead of endpoints.json.
  * think about clock skew / timezone issues with starting from last endTime
- * mint, redeem, trades: store latest_t keyed by asset/market id
+ * remove temporary code 20001 hack
