@@ -3,6 +3,7 @@ import json
 import datetime
 import time
 import traceback
+import sys
 
 from config import config
 from coinflex import CoinFlex
@@ -155,7 +156,13 @@ class History:
 							# adjust time interval parameters
 
 							if len(received_data) == limit: # limit was hit exactly
-								raise Exception(f"limit hit, due to issue A5 we have to abort, consider reducing max_period in endpoints.json for endpoint named '{name}'")
+								# try again with shorter period (exponential backoff)
+								current_period /= 2
+								print(f"limit hit, reducing current_period to {current_period} and trying again")								
+
+								#sys.exit(f"limit hit, due to issue A5 we have to abort, consider reducing max_period in endpoints.json for endpoint named '{name}'")
+								
+
 								'''
 								# latest_t is taken from received_data
 								self.data[name]['latest_t'] = max(int(d[time_field_name]) for d in received_data) 
@@ -174,6 +181,9 @@ class History:
 								current_start_t = self.data[name]['latest_t']
 								'''
 							elif len(received_data) >= 0: 
+								current_period *= 2
+								if current_period > endpoint['max_period']:
+									current_period = endpoint['max_period']
 
 								# latest_t is set to endTime of request
 								# is this problematic due to possible clock difference local vs. server (TODO)?
