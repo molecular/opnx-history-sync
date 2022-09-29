@@ -137,9 +137,17 @@ class History:
 						print("ERROR from api, response:")
 						print(json.dumps(received_json, indent=2))
 					else:
+						# pick out received_data
 						received_data = received_json["data"]
+						if endpoint["is_wallet_history"]:
+							received_data = []
+							for d in received_json["data"]:
+								for item in d["walletHistory"]:
+									item["accountId"] = d["accountId"]
+									item["accountName"] = d["name"]
+									received_data.append(item)
 						print(f"   requested {path} with {params}...")
-						#print("type(received_data): ", type(received_data))
+						#print("received_data: ", received_data)
 
 						# work around issue A6 removing redeem operations still in progess. This can be removed when A6 is fixed by coinflex
 						# NOTE: this introduces danger of missing a redeem that is still in progress in case startTime/endTime filter is on requestedAt. 
@@ -158,8 +166,9 @@ class History:
 							if len(received_data) == limit: # limit was hit exactly
 								# try again with shorter period (exponential backoff)
 								current_period /= 2
-								print(f"limit hit, reducing current_period to {current_period} and trying again")								
-
+								print(f"limit hit, reducing current_period to {current_period} and trying again")	
+								if current_period < 1:							
+									sys.exit(f"current_period reduced to <1. Too many trades at that timestamp")	
 								#sys.exit(f"limit hit, due to issue A5 we have to abort, consider reducing max_period in endpoints.json for endpoint named '{name}'")
 								
 
