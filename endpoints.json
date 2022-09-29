@@ -54,5 +54,16 @@
     "limit": 200,
     "max_period": 604799000,
     "rate_limit_sleep_s": 30
+  },
+
+  "publictrades": {
+    "name": "publictrades",
+    "method": "GET",
+    "path": "/v2/{name}/{item}",
+    "time_field_name": "matchTimestamp",
+    "items_config_var": "markets",
+    "limit": 300,
+    "max_period": 604799000
   }
+
 }
