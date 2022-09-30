@@ -139,7 +139,7 @@ class History:
 					else:
 						# pick out received_data
 						received_data = received_json["data"]
-						if endpoint["is_wallet_history"]:
+						if "is_wallet_history" in endpoint and endpoint["is_wallet_history"]:
 							received_data = []
 							for d in received_json["data"]:
 								for item in d["walletHistory"]:
