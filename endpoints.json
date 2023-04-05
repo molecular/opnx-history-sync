@@ -46,15 +46,6 @@
     "limit": 200,
     "max_period": 604799000
   },
-  "wallet": {
-    "name": "wallet",
-    "method": "GET",
-    "path": "/v3/wallet",
-    "time_field_name": "creditedAt",
-    "is_wallet_history": true,
-    "limit": 200,
-    "max_period": 604799000
-  },
   "withdrawals": {
     "name": "withdrawals",
     "method": "GET",
@@ -64,6 +55,16 @@
     "max_period": 604799000,
     "rate_limit_sleep_s": 30
   },
+  "wallet": {
+    "name": "wallet",
+    "method": "GET",
+    "path": "/v3/wallet",
+    "time_field_name": "creditedAt",
+    "is_wallet_history": true,
+    "limit": 500,
+    "max_period": 604799000
+  },
+
   "publictrades": {
     "name": "publictrades",
     "method": "GET",

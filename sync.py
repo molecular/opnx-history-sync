@@ -33,8 +33,8 @@ class History:
 
 	def sync_accountinfo(self):
 		# request accountinfo and add to data
-		print("requesting /v2/accountinfo...")
-		r = self.cf.request('/v2/accountinfo', {})
+		print("requesting /v3/account...")
+		r = self.cf.request('/v3/account', {})
 		# print("accountinfo response", r)
 		# print("accountinfo response.content", r.content)
 		# print("accountinfo response.json", json.dumps(r.json(), indent=4))
@@ -99,127 +99,126 @@ class History:
 		received_data = None
 		finished = False
 		while not finished:
-			try:
-				params = {
-					'limit': limit,
-					'startTime': int(current_start_t), 
-					'endTime': int(current_start_t + current_period) 
-				}
-				if "params" in endpoint:
-					params_to_add = endpoint['params']
-					for key in params_to_add.keys():
-						params[key] = params_to_add[key].format(name=name, item=item)
-				if params['endTime'] > t_now:
-				 	params['endTime'] = t_now
+			params = {
+				'limit': limit,
+				'startTime': int(current_start_t), 
+				'endTime': int(current_start_t + current_period) 
+			}
+			if "params" in endpoint:
+				params_to_add = endpoint['params']
+				for key in params_to_add.keys():
+					params[key] = params_to_add[key].format(name=name, item=item)
+			if params['endTime'] > t_now:
+			 	params['endTime'] = t_now
 
-				# fire request
-				print(f"requesting path {path} with params {params}")
-				r = self.cf.request(path, params)
+			# fire request
+			print(f"requesting path {path} with params {params}")
+			r = self.cf.request(path, params)
 
-				#print("response", r)
-				if r.status_code != 200:
-					print(f"status_code {r.status_code}, content: {r.content}")
-					if r.status_code == 429: # rate limit hit
-						print(f"   rate limit encountered, sleeping {endpoint['rate_limit_sleep_s']} seconds...")
-						time.sleep(endpoint['rate_limit_sleep_s'])
-					else:
-						raise Exception(f"HTTP Status Code {r.status_code}, aborting (will store data)")
+			#print("response", r)
+			if r.status_code != 200:
+				print(f"status_code {r.status_code}, content: {r.content}")
+				if r.status_code == 429: # rate limit hit
+					print(f"   rate limit encountered, sleeping {endpoint['rate_limit_sleep_s']} seconds...")
+					time.sleep(endpoint['rate_limit_sleep_s'])
 				else:
-					received_json = r.json()
-					# temporary hack to get around behaviour introduced 4/15 2022 that api throws error 20001 when there is no data
-					if "success" in received_json and "code" in received_json and "message" in received_json:
-						print('looks like error response')
-						if received_json["success"] == False and received_json["code"] == "20001" and received_json["message"] == "result not found, please check your parameters":
-							print('special hack to ignore error code 20001')
-							received_json["data"] = []
+					raise Exception(f"HTTP Status Code {r.status_code}, aborting (will store data)")
+			else:
+				received_json = r.json()
+				# temporary hack to get around behaviour introduced 4/15 2022 that api throws error 20001 when there is no data
+				print("received_json", received_json)
+				if "success" in received_json and "code" in received_json and "message" in received_json:
+					print('looks like error response')
+					if received_json["success"] == False and received_json["code"] == "20001" and received_json["message"] == "result not found, please check your parameters":
+						print('special hack to ignore error code 20001')
+						received_json["data"] = []
 
-					if "data" not in received_json:
-						print("ERROR from api, response:")
-						print(json.dumps(received_json, indent=2))
+				if "data" not in received_json:
+					print("ERROR from api, response:")
+					print(json.dumps(received_json, indent=2))
+				else:
+					# pick out received_data
+					received_data = received_json["data"]
+					if "is_wallet_history" in endpoint and endpoint["is_wallet_history"]:
+						received_data = []
+						for d in received_json["data"]:
+							for item in d["walletHistory"]:
+								item["accountId"] = d["accountId"]
+								item["accountName"] = d["name"]
+								received_data.append(item)
+					print(f"   requested {path} with {params}...")
+					#print("received_data: ", received_data)
+
+					# work around issue A6 removing redeem operations still in progess. This can be removed when A6 is fixed by coinflex
+					# NOTE: this introduces danger of missing a redeem that is still in progress in case startTime/endTime filter is on requestedAt. 
+					#       In case filter is on redeemetAt it should be fine
+					if name == 'redeem':
+						received_data = [d for d in received_data if d["redeemedAt"] != d["requestedAt"]]
+
+					if received_data == None:
+						print("no data received (not even empty), probably error")
+						print("response.json", json.dumps(r.json(), indent=4))
 					else:
-						# pick out received_data
-						received_data = received_json["data"]
-						if "is_wallet_history" in endpoint and endpoint["is_wallet_history"]:
-							received_data = []
-							for d in received_json["data"]:
-								for item in d["walletHistory"]:
-									item["accountId"] = d["accountId"]
-									item["accountName"] = d["name"]
-									received_data.append(item)
-						print(f"   requested {path} with {params}...")
-						#print("received_data: ", received_data)
+						print(f"   received {len(received_data)}/{limit} items")
 
-						# work around issue A6 removing redeem operations still in progess. This can be removed when A6 is fixed by coinflex
-						# NOTE: this introduces danger of missing a redeem that is still in progress in case startTime/endTime filter is on requestedAt. 
-						#       In case filter is on redeemetAt it should be fine
-						if name == 'redeem':
-							received_data = [d for d in received_data if d["redeemedAt"] != d["requestedAt"]]
+						# adjust time interval parameters
 
-						if received_data == None:
-							print("no data received (not even empty), probably error")
-							print("response.json", json.dumps(r.json(), indent=4))
-						else:
-							print(f"   received {len(received_data)}/{limit} items")
+						if len(received_data) == limit: # limit was hit exactly
+							# try again with shorter period (exponential backoff)
+							current_period /= 2
+							print(f"limit hit, reducing current_period to {current_period} and trying again")	
+							if current_period < 1:							
+								sys.exit(f"current_period reduced to <1. Too many trades at that timestamp")	
+							#sys.exit(f"limit hit, due to issue A5 we have to abort, consider reducing max_period in endpoints.json for endpoint named '{name}'")
+							
 
-							# adjust time interval parameters
+							'''
+							# latest_t is taken from received_data
+							self.data[name]['latest_t'] = max(int(d[time_field_name]) for d in received_data) 
+							print(f"self.data[name]['latest_t'] = {self.data[name]['latest_t']}")
 
-							if len(received_data) == limit: # limit was hit exactly
-								# try again with shorter period (exponential backoff)
-								current_period /= 2
-								print(f"limit hit, reducing current_period to {current_period} and trying again")	
-								if current_period < 1:							
-									sys.exit(f"current_period reduced to <1. Too many trades at that timestamp")	
-								#sys.exit(f"limit hit, due to issue A5 we have to abort, consider reducing max_period in endpoints.json for endpoint named '{name}'")
-								
+							# store all items except the ones with latest timestamp
+							# there could be more non-delivered items with that timestamp,... 
+							for d in received_data:
+								if True or int(d[time_field_name]) != self.data[name]['latest_t']:
+									print(f"storing {d}")
+									self.data[name]['data'].append(d) 
+								else:
+									print(f"skipping storage of {d}")
 
-								'''
-								# latest_t is taken from received_data
-								self.data[name]['latest_t'] = max(int(d[time_field_name]) for d in received_data) 
-								print(f"self.data[name]['latest_t'] = {self.data[name]['latest_t']}")
+							# so we need to include that timestamp as startTime in next request
+							current_start_t = self.data[name]['latest_t']
+							'''
+						elif len(received_data) >= 0: 
+							current_period *= 2
+							if current_period > endpoint['max_period']:
+								current_period = endpoint['max_period']
 
-								# store all items except the ones with latest timestamp
-								# there could be more non-delivered items with that timestamp,... 
-								for d in received_data:
-									if True or int(d[time_field_name]) != self.data[name]['latest_t']:
-										print(f"storing {d}")
-										self.data[name]['data'].append(d) 
-									else:
-										print(f"skipping storage of {d}")
+							# latest_t is set to endTime of request
+							# is this problematic due to possible clock difference local vs. server (TODO)?
+							self.data[name]['latest_t'] = params['endTime']
 
-								# so we need to include that timestamp as startTime in next request
-								current_start_t = self.data[name]['latest_t']
-								'''
-							elif len(received_data) >= 0: 
-								current_period *= 2
-								if current_period > endpoint['max_period']:
-									current_period = endpoint['max_period']
+							# append data to storage
+							self.data[name]['data'] += received_data
 
-								# latest_t is set to endTime of request
-								# is this problematic due to possible clock difference local vs. server (TODO)?
-								self.data[name]['latest_t'] = params['endTime']
+							# next request can used endTime + 1 as startTime
+							current_start_t = self.data[name]['latest_t'] + 1
 
-								# append data to storage
-								self.data[name]['data'] += received_data
+						#print("   new current_start_t: ", datetime.datetime.fromtimestamp(current_start_t/1000))
 
-								# next request can used endTime + 1 as startTime
-								current_start_t = self.data[name]['latest_t'] + 1
-
-							#print("   new current_start_t: ", datetime.datetime.fromtimestamp(current_start_t/1000))
-
-							if current_start_t >= t_now:
-								finished = True
-
-
-			except (KeyboardInterrupt, Exception) as ex:
-				print("ABORT due to", ex)
-				traceback.print_exc()
-				finished = True
+						if current_start_t >= t_now:
+							finished = True
 
 
 # instantiate history, load data from file, sync and dump back to same file
 
+# cf = CoinFlex(config['rest_url'], config['rest_path'], config['api_key'], config['api_secret'])
+# r = cf.request('/v3/wallet', {'limit': 200, 'startTime': 1678867715314, 'endTime': 1678960237226})
+# print(r.json())
+
 history = History()
 history.loadFromFile(config['coinflex_data_filename'])
-#history.sync_accountinfo()
+history.sync_accountinfo()
 history.sync_endpoints(config['endpoints_to_sync'].split(","))
 history.dumpToFile(config['coinflex_data_filename'])
+
