@@ -2,13 +2,14 @@
 
 ### What is this?
 
-Uses coinflex' (coinflex.com) REST API to download and update a local json file with some of the historical data available through the API (trades, mints, redeems, withdrawals, deposits, earned,...)
+Uses 
+  * coinflex' (coinflex.com) or 
+  * opnx' (opnx.com) 
+REST API to download and update a local json file with some of the historical data available through the API (trades, mints, redeems, withdrawals, deposits, earned,...)
 
 ### State
 
-Not in good shape yet. 
-
-This is currently a work-in-progress hackjob that just about "works for me". In case of demand I will improve.
+Works pretty well for a lot of cases, but not all (not all data is covered, but should be easy to extend, just make an issue if you need anything added)
 
 Several API issues are currently worked-around (partially by aborting and informing user), mainly A5, A6 (see the coinflex_issues_*.txt files)
 

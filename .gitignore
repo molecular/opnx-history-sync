@@ -1,4 +1,9 @@
-coinflex_data.json
+coinflex*json
+opnx*json
 config.py
+config_coinflex.py
+config_opnx.py
+config_nick.py
 __pycache__
 *.csv*
+*~

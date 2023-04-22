@@ -217,8 +217,8 @@ class History:
 # print(r.json())
 
 history = History()
-history.loadFromFile(config['coinflex_data_filename'])
+history.loadFromFile(config['data_filename'])
 history.sync_accountinfo()
 history.sync_endpoints(config['endpoints_to_sync'].split(","))
-history.dumpToFile(config['coinflex_data_filename'])
+history.dumpToFile(config['data_filename'])
 
