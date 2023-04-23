@@ -1,4 +1,4 @@
-# coinflex-history-sync
+# opnx-history-sync
 
 ### What is this?
 
