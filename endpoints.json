@@ -38,6 +38,16 @@
     "limit": 1000,
     "max_period": 604799000
   },
+  "amm_trades": {
+    "name": "amm_trades",
+    "method": "GET",
+    "path": "/v3/AMM/trades",
+    "params": {"hashToken": "{item}"},
+    "time_field_name": "lastMatchedAt",
+    "items_config_var": "amm_tokens",
+    "limit": 500,
+    "max_period": 604799000
+  },
   "deposits": {
     "name": "deposits",
     "method": "GET",

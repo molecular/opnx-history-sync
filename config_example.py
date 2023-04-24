@@ -1,7 +1,12 @@
 config = {
-	# coinflex production api server
+	# # coinflex test server
+	# 'rest_url': 'https://v2stgapi.coinflex.com',
+	# 'rest_path': 'v2stgapi.coinflex.com',
+
+	# # coinflex production api server
 	# 'rest_url': 'https://v2api.coinflex.com',
 	# 'rest_path': 'v2api.coinflex.com',
+
 
 	# opnx production api server
 	'rest_url': 'https://api.opnx.com',
@@ -25,10 +30,15 @@ config = {
 		"rvUSD-USDT"
 	],
 
+	# list your amm tokens
+	'amm_tokens': [
+		# "CF-BCH-AMM-ABCDE3iy"
+	]
+
 	# data will be pulled starting from this timestamp
 	't_account_start': int(1680300000 * 1000), # 2023/04/01 Europe/Berlin (output of "date -d 2023-04-01 +%s")
 
 	# list of endpoints to sync (look at endpoints.json for which ones are available)
-	'endpoints_to_sync': 'mint,redeem,earned,trades,withdrawals,deposits,wallet'
+	'endpoints_to_sync': 'mint,redeem,earned,trades,withdrawals,deposits,wallet,amm_trades'
 }
 
